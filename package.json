@@ -1,6 +1,6 @@
 {
   "name": "@sondv5/teamwork-mcp",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "MCP server for Teamwork.com using a personal API key stored in the OS keychain",
   "type": "module",
   "license": "MIT",
