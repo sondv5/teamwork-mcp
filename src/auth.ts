@@ -19,10 +19,10 @@ import {
 export class AuthRequiredError extends Error {
   constructor(readonly setupUrl: string) {
     super(
-      "Chưa có Teamwork API key trên máy này.\n" +
-        `Đã mở trang setup: ${setupUrl}\n` +
-        "(nếu browser không tự mở, copy URL này vào browser)\n" +
-        "Nhập Teamwork site + API key rồi bấm Save, sau đó gọi lại tool này.",
+      "No Teamwork API key on this machine.\n" +
+        `Opened the setup page: ${setupUrl}\n` +
+        "(if the browser did not open automatically, copy this URL into your browser)\n" +
+        "Enter your Teamwork site + API key, click Save, then call this tool again.",
     );
     this.name = "AuthRequiredError";
   }
@@ -72,7 +72,7 @@ export class AuthManager {
 
   client(): TeamworkClient {
     if (this.credential) return new TeamworkClient(this.credential);
-    if (!this.setup) throw new AuthRequiredError("(trang setup chưa sẵn sàng, thử lại sau)");
+    if (!this.setup) throw new AuthRequiredError("(setup page not ready yet, try again)");
     if (!this.browserOpened) {
       this.browserOpened = true;
       openBrowser(this.setup.url);
@@ -206,7 +206,7 @@ async function readBody(req: IncomingMessage): Promise<string> {
 }
 
 const SETUP_HTML = `<!doctype html>
-<html lang="vi">
+<html lang="en">
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -231,8 +231,8 @@ const SETUP_HTML = `<!doctype html>
 </head>
 <body>
 <main>
-  <h1>Kết nối Teamwork</h1>
-  <p>Nhập Teamwork site và personal API key. Key chỉ được gửi tới Teamwork để kiểm tra, sau đó lưu trên máy này (Windows Credential Manager / file mã hóa).</p>
+  <h1>Connect Teamwork</h1>
+  <p>Enter your Teamwork site and personal API key. The key is only sent to Teamwork for verification, then stored on this machine (Windows Credential Manager / encrypted file).</p>
   <form id="form">
     <label>Teamwork site
       <input id="site" placeholder="congty.teamwork.com" autocomplete="off" required />
@@ -240,16 +240,16 @@ const SETUP_HTML = `<!doctype html>
     <label>API key
       <input id="key" type="password" autocomplete="off" required />
     </label>
-    <button id="btn" type="submit">Lưu</button>
+    <button id="btn" type="submit">Save</button>
   </form>
   <p id="msg"></p>
   <details>
-    <summary>Cách lấy API key</summary>
+    <summary>How to get an API key</summary>
     <ol>
-      <li>Mở Teamwork, bấm icon profile ở góc dưới bên trái.</li>
-      <li>Chọn <b>Edit My Details</b>.</li>
-      <li>Vào tab <b>API &amp; Mobile</b>, bấm <b>Show your Token</b>.</li>
-      <li>Copy key rồi dán vào ô phía trên.</li>
+      <li>Open Teamwork and click your profile icon in the bottom-left corner.</li>
+      <li>Choose <b>Edit My Details</b>.</li>
+      <li>Go to the <b>API &amp; Mobile</b> tab and click <b>Show your Token</b>.</li>
+      <li>Copy the key and paste it into the field above.</li>
     </ol>
   </details>
 </main>
@@ -264,7 +264,7 @@ const SETUP_HTML = `<!doctype html>
     event.preventDefault();
     btn.disabled = true;
     msg.className = "";
-    msg.textContent = "Đang kiểm tra...";
+    msg.textContent = "Verifying...";
     try {
       var res = await fetch(location.href, {
         method: "POST",
@@ -272,14 +272,14 @@ const SETUP_HTML = `<!doctype html>
         body: JSON.stringify({ site: siteEl.value, key: keyEl.value }),
       });
       var data = await res.json();
-      if (!data.ok) throw new Error(data.error || "Lỗi không xác định");
+      if (!data.ok) throw new Error(data.error || "Unknown error");
       var name = [data.person && data.person.firstName, data.person && data.person.lastName].filter(Boolean).join(" ");
       msg.className = "ok";
-      msg.textContent = "Thành công! Đã kết nối " + data.site + (name ? " (" + name + ")" : "") + ". Quay lại chat và gọi lại tool vừa rồi.";
+      msg.textContent = "Success! Connected to " + data.site + (name ? " (" + name + ")" : "") + ". Go back to chat and retry the tool you just called.";
       form.reset();
     } catch (err) {
       msg.className = "err";
-      msg.textContent = "Lỗi: " + err.message;
+      msg.textContent = "Error: " + err.message;
     }
     btn.disabled = false;
   });

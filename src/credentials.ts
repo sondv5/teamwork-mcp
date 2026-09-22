@@ -166,6 +166,6 @@ export async function clearCredential(): Promise<boolean> {
 
 export function credentialStoreHint(): string {
   return process.platform === "win32"
-    ? "Windows Credential Manager (fallback: file mã hóa AES-256-GCM)"
-    : `OS keychain (fallback: ${CONFIG_FILE}, mã hóa AES-256-GCM)`;
+    ? "Windows Credential Manager (fallback: AES-256-GCM encrypted file)"
+    : `OS keychain (fallback: ${CONFIG_FILE}, AES-256-GCM encrypted)`;
 }

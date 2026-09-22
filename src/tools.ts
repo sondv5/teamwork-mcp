@@ -871,8 +871,8 @@ export function registerTools(server: McpServer, auth: AuthManager): void {
       const removed = await auth.logout();
       return text(
         removed
-          ? "Đã xoá API key khỏi máy. Lần gọi tool tiếp theo sẽ mở trang setup."
-          : "Không có API key nào được lưu trên máy.",
+          ? "Removed the API key from this machine. The next tool call will open the setup page."
+          : "No API key stored on this machine.",
       );
     },
   );

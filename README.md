@@ -3,33 +3,33 @@
 [![npm](https://img.shields.io/npm/v/@sondv5/teamwork-mcp)](https://www.npmjs.com/package/@sondv5/teamwork-mcp)
 [![GitHub](https://img.shields.io/badge/github-sondv5%2Fteamwork--mcp-181717?logo=github)](https://github.com/sondv5/teamwork-mcp)
 
-MCP server cho Teamwork.com dùng **personal API key**. Key được lưu trong OS keychain
-(hoặc file mã hóa), nên file cấu hình MCP của client không chứa secret.
+MCP server for Teamwork.com using a **personal API key**. The key is stored in the
+OS keychain (or an encrypted file), so MCP client config files never contain secrets.
 
 ## Features
 
 - MCP server over stdio
-- Lần đầu dùng sẽ mở trang setup local để nhập site + API key, verify rồi lưu lại
-- Hỗ trợ Windows Credential Manager / macOS Keychain / libsecret + fallback file mã hóa AES-256-GCM
-- Tools gọn nhẹ, trim field để tiết kiệm token cho agent
+- First use opens a local setup page to enter site + API key, verifies it, then saves it
+- Supports Windows Credential Manager / macOS Keychain / libsecret, with an AES-256-GCM encrypted file fallback
+- Compact tool responses with trimmed fields to save agent tokens
 
 ## Install / Run
 
-Chạy trực tiếp với `npx` (không cần clone repo):
+Run directly with `npx` (no need to clone the repo):
 
 ```bash
 npx -y @sondv5/teamwork-mcp@latest
 ```
 
-Lần đầu gọi bất kỳ tool nào mà chưa có key, server sẽ:
+The first time you call any tool without a key, the server will:
 
-1. Mở browser tới trang setup local (`http://127.0.0.1:<port>/setup/<nonce>`)
-2. Bạn nhập Teamwork site + API key → server verify với Teamwork rồi lưu lại
-3. Gọi lại tool vừa rồi — mọi thứ hoạt động, không cần restart
+1. Open your browser to a local setup page (`http://127.0.0.1:<port>/setup/<nonce>`)
+2. You enter your Teamwork site + API key → the server verifies it with Teamwork and saves it
+3. Retry the tool you just called — everything works, no restart needed
 
-Lấy key tại Teamwork: Profile → Edit My Details → tab **API & Mobile** → *Show your Token*.
+Get your key in Teamwork: Profile → Edit My Details → **API & Mobile** tab → *Show your Token*.
 
-Cho local development:
+For local development:
 
 ```bash
 npm install
@@ -37,12 +37,12 @@ npm run build
 node dist/bin.js
 ```
 
-CLI vẫn có sẵn cho ai thích terminal:
+A CLI is also available for terminal users:
 
 ```bash
-npx -y @sondv5/teamwork-mcp@latest auth     # nhập site + key, verify rồi lưu
-npx -y @sondv5/teamwork-mcp@latest status   # xem credential đang dùng
-npx -y @sondv5/teamwork-mcp@latest logout   # xoá credential
+npx -y @sondv5/teamwork-mcp@latest auth     # enter site + key, verify and save
+npx -y @sondv5/teamwork-mcp@latest status   # show the credential in use
+npx -y @sondv5/teamwork-mcp@latest logout   # remove the credential
 ```
 
 ## MCP Client Config
@@ -60,7 +60,7 @@ npx -y @sondv5/teamwork-mcp@latest logout   # xoá credential
 
 ## Local Project Setup
 
-Template có sẵn trong repo này:
+Ready-made templates are included in this repository:
 
 ```
 .cursor/mcp.json
@@ -71,7 +71,7 @@ opencode.json
 
 ### Cursor
 
-Tạo `.cursor/mcp.json` trong project root:
+Create `.cursor/mcp.json` in your project root:
 
 ```json
 {
@@ -87,14 +87,14 @@ Tạo `.cursor/mcp.json` trong project root:
 
 ### Claude Code
 
-Thêm bằng CLI từ project root:
+Add it with the CLI from the project root:
 
 ```bash
 claude mcp add --transport stdio --scope project \
   teamwork -- npx -y @sondv5/teamwork-mcp@latest
 ```
 
-Hoặc commit file `.mcp.json` ở project root:
+Or commit a project-level `.mcp.json`:
 
 ```json
 {
@@ -110,7 +110,7 @@ Hoặc commit file `.mcp.json` ở project root:
 
 ### Codex
 
-Config user-level tại `~/.codex/config.toml`:
+User-level config in `~/.codex/config.toml`:
 
 ```toml
 [mcp_servers.teamwork]
@@ -118,12 +118,12 @@ command = "npx"
 args = ["-y", "@sondv5/teamwork-mcp@latest"]
 ```
 
-Bản Codex hiện tại cũng có thể đọc config project-local từ `.codex/config.toml`
-với project đã trust. Nếu không nhận, fallback về `~/.codex/config.toml`.
+Recent Codex builds may also load project-local config from `.codex/config.toml`
+for trusted projects. If it is not picked up, fall back to `~/.codex/config.toml`.
 
 ### OpenCode
 
-Tạo `opencode.json` trong project root:
+Create `opencode.json` in your project root:
 
 ```json
 {
@@ -140,8 +140,8 @@ Tạo `opencode.json` trong project root:
 
 ### Claude Desktop
 
-Sửa file config (`%APPDATA%\Claude\claude_desktop_config.json` trên Windows,
-`~/Library/Application Support/Claude/claude_desktop_config.json` trên macOS):
+Edit the config file (`%APPDATA%\Claude\claude_desktop_config.json` on Windows,
+`~/Library/Application Support/Claude/claude_desktop_config.json` on macOS):
 
 ```json
 {
@@ -156,11 +156,11 @@ Sửa file config (`%APPDATA%\Claude\claude_desktop_config.json` trên Windows,
 
 ### Windsurf
 
-Sửa `~/.codeium/windsurf/mcp_config.json`, cùng format như Claude Desktop ở trên.
+Edit `~/.codeium/windsurf/mcp_config.json` using the same format as Claude Desktop above.
 
 ### VS Code (Agent mode)
 
-Tạo `.vscode/mcp.json` trong project:
+Create `.vscode/mcp.json` in your project:
 
 ```json
 {
@@ -182,35 +182,36 @@ Tạo `.vscode/mcp.json` trong project:
 opencode.json
 ```
 
-Commit `.cursor/mcp.json`, `.mcp.json` và `opencode.json` khi MCP server là một
-phần workflow của team. Với Codex, ưu tiên `~/.codex/config.toml` trừ khi team
-đã verify project-local `.codex/config.toml` hoạt động với bản Codex đang dùng.
+Commit `.cursor/mcp.json`, `.mcp.json` and `opencode.json` when the MCP server is
+part of the team workflow. For Codex, prefer `~/.codex/config.toml` unless your
+team has verified that project-local `.codex/config.toml` works with the Codex
+version they use.
 
 ## Tools
 
-| Tool | Loại | Mô tả |
+| Tool | Type | Description |
 | --- | --- | --- |
-| `whoami` | read | User sở hữu key + site |
-| `list_projects` | read | Liệt kê/tìm project |
-| `list_tasklists` | read | Task list trong project |
-| `list_tasks` | read | Tìm task theo project/list/từ khoá |
-| `get_task` | read | Chi tiết 1 task |
-| `my_work` | read | Việc được giao cho tôi (today/overdue/thisweek) |
-| `latest_activity` | read | Feed hoạt động mới nhất (như activity widget) |
-| `search` | read | Tìm task/message/file/comment/milestone theo từ khoá |
-| `upcoming_milestones` | read | Milestone có deadline trong khoảng ngày |
-| `project_updates` | read | Status update/health của project |
-| `list_task_comments` | read | Đọc thảo luận của task |
-| `list_people` | read | Tìm user (tên/email → id) |
-| `auth_status` | read | Kiểm tra đã có key chưa, site, nơi lưu |
-| `create_task` | **write** | Tạo task trong task list |
-| `update_task` | **write** | Sửa task / complete / gán assignee, tag |
-| `add_task_comment` | **write** | Comment vào task |
-| `log_time` | **write** | Log giờ vào task hoặc project |
-| `logout` | local | Xoá API key khỏi máy |
+| `whoami` | read | User owning the key + site |
+| `list_projects` | read | List/search projects |
+| `list_tasklists` | read | Task lists inside a project |
+| `list_tasks` | read | Find tasks by project/list/keyword |
+| `get_task` | read | Details of one task |
+| `my_work` | read | Work assigned to me (today/overdue/thisweek) |
+| `latest_activity` | read | Latest activity feed (like the activity widget) |
+| `search` | read | Search tasks/messages/files/comments/milestones by keyword |
+| `upcoming_milestones` | read | Milestones with deadlines in a date range |
+| `project_updates` | read | Project status updates / health |
+| `list_task_comments` | read | Read a task's discussion thread |
+| `list_people` | read | Find users (name/email → id) |
+| `auth_status` | read | Check key status, site and storage |
+| `create_task` | **write** | Create a task in a task list |
+| `update_task` | **write** | Edit a task / complete / assign users, tags |
+| `add_task_comment` | **write** | Comment on a task |
+| `log_time` | **write** | Log hours on a task or project |
+| `logout` | local | Remove the API key from this machine |
 
-Trong opencode, tên đầy đủ là `<tên server>_<tool>`, ví dụ `teamwork_create_task`.
-Nên để các tool **write** ở chế độ `ask` trong `opencode.json`:
+In opencode, the full name is `<server name>_<tool>`, e.g. `teamwork_create_task`.
+Keep the **write** tools in `ask` mode in `opencode.json`:
 
 ```json
 {
@@ -225,16 +226,16 @@ Nên để các tool **write** ở chế độ `ask` trong `opencode.json`:
 }
 ```
 
-## Biến môi trường (tuỳ chọn, cho CI)
+## Environment Variables (optional, for CI)
 
-`TEAMWORK_SITE` và `TEAMWORK_API_KEY` sẽ override keychain. Lưu ý: env là plaintext.
+`TEAMWORK_SITE` and `TEAMWORK_API_KEY` override the keychain. Note: env vars are plaintext.
 
-## Bảo mật
+## Security
 
-- API key kế thừa quyền của user → nên tạo **user riêng** (standard user, chỉ access
-  project cần thiết) thay vì dùng key của admin/owner.
-- Không truyền key qua `args` trong `mcp.json` (lộ qua process list).
-- Server chỉ ghi log ra stderr; stdout dành riêng cho JSON-RPC.
+- The API key inherits the user's permissions → prefer a dedicated **standard user**
+  (only access to required projects) instead of an admin/owner key.
+- Never pass the key via `args` in `mcp.json` (visible in process lists).
+- The server only logs to stderr; stdout is reserved for JSON-RPC.
 
 ## Dev
 
@@ -244,9 +245,6 @@ npm run build        # tsc -> dist/
 npm run dev          # watch mode
 node dist/bin.js --help
 ```
-
-Release lên npm tự động qua GitHub Actions khi push tag `v*.*.*`
-(xem `.github/workflows/publish.yml`, cần secret `NPM_TOKEN`).
 
 ## License
 

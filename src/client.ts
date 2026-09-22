@@ -92,7 +92,7 @@ function describeError(status: number, raw: string): string {
   }
 
   if (status === 401) {
-    return `Teamwork API 401 Unauthorized: API key không hợp lệ hoặc đã bị thu hồi. Kiểm tra lại key (Profile > Edit My Details > API & Mobile > Show your Token). ${detail}`;
+    return `Teamwork API 401 Unauthorized: invalid or revoked API key. Check the key (Profile > Edit My Details > API & Mobile > Show your Token). ${detail}`;
   }
   if (status === 403) {
     return `Teamwork API 403 Forbidden: this user/key lacks permission for that action. ${detail}`;
