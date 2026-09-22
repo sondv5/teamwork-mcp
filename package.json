@@ -1,0 +1,51 @@
+{
+  "name": "@sondv5/teamwork-mcp",
+  "version": "0.1.0",
+  "description": "MCP server for Teamwork.com using a personal API key stored in the OS keychain",
+  "type": "module",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sondv5/teamwork-mcp.git"
+  },
+  "bugs": {
+    "url": "https://github.com/sondv5/teamwork-mcp/issues"
+  },
+  "homepage": "https://github.com/sondv5/teamwork-mcp#readme",
+  "bin": {
+    "teamwork-mcp": "dist/bin.js"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsc",
+    "check": "tsc --noEmit",
+    "dev": "tsc --watch",
+    "start": "node dist/bin.js",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "teamwork",
+    "project-management"
+  ],
+  "dependencies": {
+    "@inquirer/prompts": "^8.7.2",
+    "@modelcontextprotocol/sdk": "^1.30.0",
+    "@napi-rs/keyring": "^2.1.0",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "typescript": "^5.9.0"
+  }
+}

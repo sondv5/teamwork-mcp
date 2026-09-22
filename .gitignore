@@ -1,0 +1,5 @@
+node_modules/
+dist/
+*.tsbuildinfo
+.env
+e2e-test.mjs

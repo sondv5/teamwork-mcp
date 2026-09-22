@@ -1,0 +1,3 @@
+[mcp_servers.teamwork]
+command = "npx"
+args = ["-y", "@sondv5/teamwork-mcp@latest"]

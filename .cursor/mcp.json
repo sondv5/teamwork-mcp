@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "teamwork": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "@sondv5/teamwork-mcp@latest"]
+    }
+  }
+}
