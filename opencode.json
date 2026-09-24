@@ -3,7 +3,7 @@
   "mcp": {
     "teamwork": {
       "type": "local",
-      "command": ["npx", "-y", "@sondv5/teamwork-mcp@latest"],
+      "command": ["node", "dist/bin.js"],
       "enabled": true
     }
   }

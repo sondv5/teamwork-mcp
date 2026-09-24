@@ -22,50 +22,61 @@ export class TeamworkError extends Error {
 
 const BASE_PATH = "/projects/api/v3";
 
-export class TeamworkClient {
+/** Minimal surface exposed to tools. The API key never leaves TeamworkClient. */
+export interface TeamworkApi {
   readonly site: string;
-  private readonly key: string;
+  get<T>(path: string, query?: Query): Promise<T>;
+  post<T>(path: string, body: unknown): Promise<T>;
+  put<T>(path: string, body: unknown): Promise<T>;
+  delete<T>(path: string, query?: Query): Promise<T>;
+  request<T>(method: string, path: string, query?: Query, body?: unknown): Promise<T>;
+}
+
+export class TeamworkClient implements TeamworkApi {
+  readonly site: string;
+  #key: string;
 
   constructor(cred: Credential) {
     this.site = cred.site;
-    this.key = cred.key;
+    this.#key = cred.key;
   }
 
   get<T>(path: string, query?: Query): Promise<T> {
-    return this.request<T>("GET", path, { query });
+    return this.request<T>("GET", path, query);
   }
 
   post<T>(path: string, body: unknown): Promise<T> {
-    return this.request<T>("POST", path, { body });
+    return this.request<T>("POST", path, undefined, body);
   }
 
   put<T>(path: string, body: unknown): Promise<T> {
-    return this.request<T>("PUT", path, { body });
+    return this.request<T>("PUT", path, undefined, body);
   }
 
-  private async request<T>(
-    method: string,
-    path: string,
-    opts: { query?: Query; body?: unknown } = {},
-  ): Promise<T> {
-    const url = new URL(`https://${this.site}${BASE_PATH}${path}`);
-    for (const [name, value] of Object.entries(opts.query ?? {})) {
+  delete<T>(path: string, query?: Query): Promise<T> {
+    return this.request<T>("DELETE", path, query);
+  }
+
+  async request<T>(method: string, path: string, query?: Query, body?: unknown): Promise<T> {
+    const normalized = normalizePath(path);
+    const url = new URL(`https://${this.site}${normalized}`);
+    for (const [name, value] of Object.entries(query ?? {})) {
       if (value === undefined || value === null || value === "") continue;
       url.searchParams.set(name, Array.isArray(value) ? value.join(",") : String(value));
     }
 
     const headers: Record<string, string> = {
-      Authorization: `Basic ${Buffer.from(`${this.key}:`).toString("base64")}`,
+      Authorization: `Basic ${Buffer.from(`${this.#key}:`).toString("base64")}`,
       Accept: "application/json",
     };
-    if (opts.body !== undefined) headers["Content-Type"] = "application/json";
+    if (body !== undefined) headers["Content-Type"] = "application/json";
 
     let res: Response;
     try {
       res = await fetch(url, {
         method,
         headers,
-        body: opts.body !== undefined ? JSON.stringify(opts.body) : undefined,
+        body: body !== undefined ? JSON.stringify(body) : undefined,
       });
     } catch (err) {
       throw new TeamworkError(`Cannot reach ${url.host}: ${(err as Error).message}`);
@@ -75,6 +86,14 @@ export class TeamworkClient {
     if (!res.ok) throw new TeamworkError(describeError(res.status, raw), res.status);
     return (raw ? JSON.parse(raw) : {}) as T;
   }
+}
+
+function normalizePath(path: string): string {
+  let p = path.trim();
+  if (!p.startsWith("/")) p = `/${p}`;
+  // Allow callers to pass the full "/projects/api/v3/..." prefix or a short "/tasks.json" path.
+  if (p.startsWith(`${BASE_PATH}/`) || p === BASE_PATH) return p;
+  return `${BASE_PATH}${p}`;
 }
 
 function describeError(status: number, raw: string): string {

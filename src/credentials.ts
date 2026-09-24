@@ -126,7 +126,11 @@ export async function loadCredential(): Promise<Credential | null> {
   } catch {
     return null;
   }
-  return parseCredential(decryptPayload(raw) ?? raw);
+  // Only accept AES-256-GCM encrypted payloads. Legacy plaintext files are
+  // rejected on purpose: user re-auths once and the file is rewritten encrypted.
+  const decrypted = decryptPayload(raw);
+  if (!decrypted) return null;
+  return parseCredential(decrypted);
 }
 
 export async function saveCredential(cred: Credential): Promise<string> {

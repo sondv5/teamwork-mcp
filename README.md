@@ -187,41 +187,29 @@ part of the team workflow. For Codex, prefer `~/.codex/config.toml` unless your
 team has verified that project-local `.codex/config.toml` works with the Codex
 version they use.
 
-## Tools
+## Tools (7 grouped tools, action-dispatched)
 
-| Tool | Type | Description |
+| Tool | Type | Actions (via `action` param) |
 | --- | --- | --- |
-| `whoami` | read | User owning the key + site |
-| `list_projects` | read | List/search projects |
-| `list_tasklists` | read | Task lists inside a project |
-| `list_tasks` | read | Find tasks by project/list/keyword |
-| `get_task` | read | Details of one task |
-| `my_work` | read | Work assigned to me (today/overdue/thisweek) |
-| `latest_activity` | read | Latest activity feed (like the activity widget) |
-| `search` | read | Search tasks/messages/files/comments/milestones by keyword |
-| `upcoming_milestones` | read | Milestones with deadlines in a date range |
-| `project_updates` | read | Project status updates / health |
-| `list_task_comments` | read | Read a task's discussion thread |
-| `list_people` | read | Find users (name/email → id) |
-| `auth_status` | read | Check key status, site and storage |
-| `create_task` | **write** | Create a task in a task list |
-| `update_task` | **write** | Edit a task / complete / assign users, tags |
-| `add_task_comment` | **write** | Comment on a task |
-| `log_time` | **write** | Log hours on a task or project |
-| `logout` | local | Remove the API key from this machine |
+| `tasks` | mixed | `list` (search tasks), `get`, `create`, `update` (edit/complete/assign/tags), `list_comments`, `comment` |
+| `projects` | read | `list`, `tasklists`, `updates` (health), `milestones` (date range), `activity` (feed) |
+| `people` | read | `whoami`, `list` (find users), `my_work` (today/overdue/thisweek) |
+| `time` | **write** | `log` (minutes on task/project) |
+| `search` | read | global keyword search (tasks/messages/files/comments/milestones/...) |
+| `system` | local | `status` (key/site/storage), `logout` (remove key) |
+| `request` | mixed | raw V3 escape hatch: `GET/POST/PUT/DELETE` any `/projects/api/v3/...` path (tags, teams, files, notebooks, calendars, timelogs...) |
 
-In opencode, the full name is `<server name>_<tool>`, e.g. `teamwork_create_task`.
+In opencode, the full name is `<server name>_<tool>`, e.g. `teamwork_tasks`.
 Keep the **write** tools in `ask` mode in `opencode.json`:
 
 ```json
 {
   "permission": {
     "teamwork_*": "allow",
-    "teamwork_create_task": "ask",
-    "teamwork_update_task": "ask",
-    "teamwork_add_task_comment": "ask",
-    "teamwork_log_time": "ask",
-    "teamwork_logout": "ask"
+    "teamwork_tasks": "ask",
+    "teamwork_time": "ask",
+    "teamwork_request": "ask",
+    "teamwork_system": "ask"
   }
 }
 ```

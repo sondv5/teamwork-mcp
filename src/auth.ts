@@ -17,26 +17,35 @@ import {
 } from "./credentials.js";
 
 export class AuthRequiredError extends Error {
-  constructor(readonly setupUrl: string) {
+  readonly setupUrl: string;
+  readonly browserOpened: boolean;
+
+  constructor(setupUrl: string, browserOpened = false) {
+    const action = browserOpened
+      ? `Opened the setup page in your browser: ${setupUrl}`
+      : `Open this setup page in your browser: ${setupUrl}`;
     super(
       "No Teamwork API key on this machine.\n" +
-        `Opened the setup page: ${setupUrl}\n` +
-        "(if the browser did not open automatically, copy this URL into your browser)\n" +
+        `${action}\n` +
         "Enter your Teamwork site + API key, click Save, then call this tool again.",
     );
     this.name = "AuthRequiredError";
+    this.setupUrl = setupUrl;
+    this.browserOpened = browserOpened;
   }
 }
 
-export function openBrowser(url: string): void {
-  if (process.env.TEAMWORK_MCP_NO_BROWSER === "1") return;
+export function openBrowser(url: string): boolean {
+  if (process.env.TEAMWORK_MCP_NO_BROWSER === "1") return false;
   const command =
     process.platform === "win32" ? "cmd" : process.platform === "darwin" ? "open" : "xdg-open";
   const args = process.platform === "win32" ? ["/c", "start", "", url] : [url];
   try {
     spawn(command, args, { detached: true, stdio: "ignore" }).unref();
+    return true;
   } catch {
     // user can open the URL manually
+    return false;
   }
 }
 
@@ -47,7 +56,10 @@ function mask(key: string): string {
 export class AuthManager {
   private credential: Credential | null = null;
   private setup: SetupServer | null = null;
-  private browserOpened = false;
+  private lastBrowserOpenedAt = 0;
+
+  /** Re-open the browser at most once per interval to avoid tab spam on retries. */
+  private static readonly BROWSER_REOPEN_MS = 60_000;
 
   async init(): Promise<void> {
     this.credential = await loadCredential();
@@ -57,6 +69,7 @@ export class AuthManager {
     if (this.setup) return;
     const setup = new SetupServer((cred) => {
       this.credential = cred;
+      this.lastBrowserOpenedAt = 0;
     });
     await setup.start();
     this.setup = setup;
@@ -66,6 +79,7 @@ export class AuthManager {
     return this.credential !== null;
   }
 
+  /** Tools use this. They receive a TeamworkClient and never learn where the key is stored. */
   get site(): string | null {
     return this.credential?.site ?? null;
   }
@@ -73,26 +87,40 @@ export class AuthManager {
   client(): TeamworkClient {
     if (this.credential) return new TeamworkClient(this.credential);
     if (!this.setup) throw new AuthRequiredError("(setup page not ready yet, try again)");
-    if (!this.browserOpened) {
-      this.browserOpened = true;
-      openBrowser(this.setup.url);
+    if (this.setup.isExpired()) this.setup.refresh();
+    const now = Date.now();
+    let opened = false;
+    if (now - this.lastBrowserOpenedAt > AuthManager.BROWSER_REOPEN_MS) {
+      opened = openBrowser(this.setup.url);
+      if (opened) this.lastBrowserOpenedAt = now;
     }
-    throw new AuthRequiredError(this.setup.url);
+    throw new AuthRequiredError(this.setup.url, opened);
+  }
+
+  /** Called when the API rejects the stored key (401). Drops it so the next call re-opens setup. */
+  async handleUnauthorized(): Promise<void> {
+    await clearCredential().catch(() => {});
+    this.credential = null;
+    this.lastBrowserOpenedAt = 0;
   }
 
   async logout(): Promise<boolean> {
     const removed = await clearCredential();
     this.credential = null;
-    this.browserOpened = false;
+    this.lastBrowserOpenedAt = 0;
     return removed;
   }
 
   async status(): Promise<Record<string, unknown>> {
+    const envOverride = Boolean(
+      process.env.TEAMWORK_API_KEY?.trim() && process.env.TEAMWORK_SITE?.trim(),
+    );
     if (!this.credential) {
       return {
         authenticated: false,
         setupUrl: this.setup?.url ?? null,
         storage: credentialStoreHint(),
+        envOverride,
       };
     }
     return {
@@ -100,6 +128,7 @@ export class AuthManager {
       site: this.credential.site,
       key: mask(this.credential.key),
       storage: credentialStoreHint(),
+      envOverride,
     };
   }
 
@@ -111,13 +140,50 @@ export class AuthManager {
 
 class SetupServer {
   private server: Server | null = null;
-  private readonly nonce = randomBytes(16).toString("hex");
+  private nonce = randomBytes(16).toString("hex");
   private port = 0;
+  private createdAt = Date.now();
+  private failedAttempts = 0;
+  private failureWindowStart = 0;
+
+  /** Rotate the setup URL after this long to bound nonce lifetime. */
+  private static readonly MAX_AGE_MS = 2 * 60 * 60 * 1000;
+  /** Simple brute-force guard for the local POST endpoint. */
+  private static readonly MAX_FAILURES = 10;
+  private static readonly FAILURE_WINDOW_MS = 5 * 60 * 1000;
 
   constructor(private readonly onSaved: (cred: Credential) => void) {}
 
   get url(): string {
     return `http://127.0.0.1:${this.port}/setup/${this.nonce}`;
+  }
+
+  isExpired(): boolean {
+    return Date.now() - this.createdAt > SetupServer.MAX_AGE_MS;
+  }
+
+  refresh(): void {
+    this.nonce = randomBytes(16).toString("hex");
+    this.createdAt = Date.now();
+    this.failedAttempts = 0;
+    this.failureWindowStart = 0;
+  }
+
+  private isRateLimited(): boolean {
+    return (
+      this.failedAttempts >= SetupServer.MAX_FAILURES &&
+      Date.now() - this.failureWindowStart < SetupServer.FAILURE_WINDOW_MS
+    );
+  }
+
+  private recordFailure(): void {
+    const now = Date.now();
+    if (now - this.failureWindowStart > SetupServer.FAILURE_WINDOW_MS) {
+      this.failureWindowStart = now;
+      this.failedAttempts = 1;
+    } else {
+      this.failedAttempts += 1;
+    }
   }
 
   async start(): Promise<void> {
@@ -165,6 +231,13 @@ class SetupServer {
     }
 
     if (req.method === "POST") {
+      if (this.isRateLimited()) {
+        // Too many bad attempts recently - ask the browser to back off.
+        res
+          .writeHead(429, { "content-type": "application/json" })
+          .end(JSON.stringify({ ok: false, error: "Too many attempts, try again later" }));
+        return;
+      }
       try {
         const body = await readBody(req);
         const parsed = JSON.parse(body) as { site?: string; key?: string };
@@ -178,10 +251,13 @@ class SetupServer {
 
         await saveCredential({ site, key });
         this.onSaved({ site, key });
+        this.failedAttempts = 0;
+        this.failureWindowStart = 0;
         res
           .writeHead(200, { "content-type": "application/json" })
           .end(JSON.stringify({ ok: true, site, person: me.person ?? {} }));
       } catch (err) {
+        this.recordFailure();
         res
           .writeHead(400, { "content-type": "application/json" })
           .end(JSON.stringify({ ok: false, error: (err as Error).message }));
@@ -235,7 +311,7 @@ const SETUP_HTML = `<!doctype html>
   <p>Enter your Teamwork site and personal API key. The key is only sent to Teamwork for verification, then stored on this machine (Windows Credential Manager / encrypted file).</p>
   <form id="form">
     <label>Teamwork site
-      <input id="site" placeholder="congty.teamwork.com" autocomplete="off" required />
+      <input id="site" placeholder="company.teamwork.com" autocomplete="off" required />
     </label>
     <label>API key
       <input id="key" type="password" autocomplete="off" required />
