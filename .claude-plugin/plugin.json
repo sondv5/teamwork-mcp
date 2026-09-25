@@ -1,0 +1,12 @@
+{
+  "name": "teamwork",
+  "version": "0.1.2",
+  "description": "Teamwork.com MCP server (tasks, projects, people, time, search) using a personal API key with a one-time guided setup",
+  "author": {
+    "name": "Son Dong Van"
+  },
+  "homepage": "https://github.com/sondv5/teamwork-mcp#readme",
+  "repository": "https://github.com/sondv5/teamwork-mcp",
+  "license": "MIT",
+  "keywords": ["teamwork", "project-management", "mcp"]
+}

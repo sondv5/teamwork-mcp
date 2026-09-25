@@ -1,0 +1,13 @@
+{
+  "name": "teamwork-mcp",
+  "description": "Teamwork.com MCP server plugin (tasks, projects, people, time, search)",
+  "owner": {
+    "name": "sondv5"
+  },
+  "plugins": [
+    {
+      "name": "teamwork",
+      "source": "./"
+    }
+  ]
+}

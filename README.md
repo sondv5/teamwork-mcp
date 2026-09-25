@@ -13,6 +13,21 @@ OS keychain (or an encrypted file), so MCP client config files never contain sec
 - Supports Windows Credential Manager / macOS Keychain / libsecret, with an AES-256-GCM encrypted file fallback
 - Compact tool responses with trimmed fields to save agent tokens
 
+## Install as a Claude Code / Cowork plugin (easiest, no config editing)
+
+This repo is also a Claude Code plugin (`.claude-plugin/plugin.json` +
+`.claude-plugin/marketplace.json`). Each teammate runs these two commands once —
+the MCP server is wired up automatically, no `mcp.json` editing needed:
+
+```bash
+claude plugin marketplace add sondv5/teamwork-mcp
+claude plugin install teamwork@teamwork-mcp
+```
+
+The first time anyone calls a Teamwork tool, the guided setup page opens automatically
+for them to enter **their own** site + API key (stored locally in their OS keychain) —
+nothing to configure by hand.
+
 ## Install / Run
 
 Run directly with `npx` (no need to clone the repo):
