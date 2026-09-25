@@ -1,0 +1,8 @@
+{
+  "name": "teamwork",
+  "description": "Teamwork.com MCP server (tasks, projects, people, time, search) using a personal API key with a one-time guided setup",
+  "version": "0.1.2",
+  "author": {
+    "name": "Son Dong Van"
+  }
+}

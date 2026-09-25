@@ -100,6 +100,17 @@ Create `.cursor/mcp.json` in your project root:
 }
 ```
 
+**Or install it as a Cursor plugin** (no per-project file needed — this repo already
+ships `.cursor-plugin/plugin.json` + `mcp.json`):
+
+- **Personal / local test**: clone or symlink this repo into `~/.cursor/plugins/local/teamwork-mcp`,
+  then reload Cursor (`Developer: Reload Window`).
+- **Team (Team/Enterprise plan)**: Dashboard → **Plugins & MCPs** → **Import from Repo** →
+  point at `https://github.com/sondv5/teamwork-mcp`. Turn on **Auto Refresh** so updates
+  pushed to the repo propagate automatically.
+- **Public**: submit at [cursor.com/marketplace/publish](https://cursor.com/marketplace/publish)
+  (the repo is already MIT-licensed and public, so it qualifies).
+
 ### Claude Code
 
 Add it with the CLI from the project root:
@@ -213,21 +224,6 @@ version they use.
 | `search` | read | global keyword search (tasks/messages/files/comments/milestones/...) |
 | `system` | local | `status` (key/site/storage), `logout` (remove key) |
 | `request` | mixed | raw V3 escape hatch: `GET/POST/PUT/DELETE` any `/projects/api/v3/...` path (tags, teams, files, notebooks, calendars, timelogs...) |
-
-In opencode, the full name is `<server name>_<tool>`, e.g. `teamwork_tasks`.
-Keep the **write** tools in `ask` mode in `opencode.json`:
-
-```json
-{
-  "permission": {
-    "teamwork_*": "allow",
-    "teamwork_tasks": "ask",
-    "teamwork_time": "ask",
-    "teamwork_request": "ask",
-    "teamwork_system": "ask"
-  }
-}
-```
 
 ## Environment Variables (optional, for CI)
 
